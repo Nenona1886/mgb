@@ -7,7 +7,7 @@ const Schema =mongoose.Schema
 
 mongoose.connect(process.env.MONGODB_URL)
 .then(()=>{
-  console.log("Conexion exitosa con la BBDD!!!!!!")
+  console.log("Conexion exitosa con la BBDD!!!!!! - Bien Pipe")
 })
 .catch((err) =>
   console.log("hubo un error al conectarnos con la BBDD")
