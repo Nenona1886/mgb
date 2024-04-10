@@ -6,7 +6,7 @@ const tasksDIV = document.querySelector("#tasks")
 const input = document.querySelector("#task-name")
 
 const baseBackendUrl = `${window.origin}/api`
-//console.log({ window, baseBackendUrl})
+console.log({ window, baseBackendUrl})
 //const baseBackendUrl = "http://localhost:4000/api"
 
 
