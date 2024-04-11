@@ -4,6 +4,8 @@ const app = express()
 const port = process.env.PORT
 const mongoose = require('mongoose')
 const Schema =mongoose.Schema
+const transporter = require("./helpers/mailer")
+const Mail = require("nodemailer/lib/mailer")
 
 mongoose.connect(process.env.MONGODB_URL)
 .then(()=>{
@@ -20,14 +22,14 @@ const taskSchema = new Schema({
 
 const Task = mongoose.model("Task", taskSchema, "Tasks" )
 
-//Servir archivos estaticos
+// Servir archivos estaticos
 app.use(express.static('public'))
 
-//Middlewares para parsear el BODY de las requests
+// Middlewares para parsear el BODY de las requests
 app.use(express.json())
 
-//Middlewares (preprocesamento de requests)
-//Son SIEMPRE => FUNCIONES
+// Middlewares (preprocesamento de requests)
+// Son SIEMPRE => FUNCIONES
 
 // A) Pasamos una funicon anonima.
 app.use((req,res,next)=>{
@@ -48,11 +50,11 @@ const logger = {
 app.use("/martin", logger.logThis("logueame estooo"))
 // hasta aca ej. B
 
-//Configuar rutas
+// Configuar rutas
 app.get('/', (req, res) => {  res.send('Hello World! - Sam Sam - Presta atencion - Jamas lo Dudes')})
 
-//Buscar todas las tareas (ya creadas)- usando el modelo de mongoose 
-//const Task = mongoose.model("Task", taskSchema, "Tasks" )
+// Buscar todas las tareas (ya creadas)- usando el modelo de mongoose 
+// const Task = mongoose.model("Task", taskSchema, "Tasks" )
 app.get('/api/tasks', (req, res) => {
   Task.find().then((tasks)=>{
     res.status(200).json({ ok: true, message: "Tareas existentes", data: tasks })
@@ -61,9 +63,7 @@ app.get('/api/tasks', (req, res) => {
   })
 })
 
-
-
-//Crear
+// Crear
 app.post('/api/tasks', (req, res) => {
   const body = req.body
   console.log({ body })
@@ -77,7 +77,7 @@ app.post('/api/tasks', (req, res) => {
   })
 })
 
-//Actualiar
+// Actualiar
 app.put('/api/tasks/:id', (req, res) => {
   const body = req.body
   const id = req.params.id
@@ -91,7 +91,7 @@ app.put('/api/tasks/:id', (req, res) => {
   })
 })
 
-//Eliminar
+// Eliminar
 //con las teclas Shift + Alt + Flecha Abajo (duplica el codigo).
 app.delete('/api/tasks/:id', (req, res) => {
   const id = req.params.id
@@ -102,6 +102,19 @@ app.delete('/api/tasks/:id', (req, res) => {
   }).catch((err) => {
     res.status(400).json({ok: false, message: "Error al eliminar tarea"})
   })
+})
+
+// Mail
+app.post('/api/auth/login/:email/code', async function (req, res) {
+  const { email } = req.params
+  const result = await transporter.sendMail({
+  from: `JDB Sistemas ${process.env.EMAIL}`,
+  to: email,
+  subject:"Codigo de inicio de sesion: ",
+  body:"Este es tu codigo para iniciar sesion: ",
+})
+console.log({ result })
+res.status(200).json({ok: true, message: "Codigo enviado con exito!"})
 })
 
 // otras pruebas vs.
