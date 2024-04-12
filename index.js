@@ -7,6 +7,7 @@ const Schema =mongoose.Schema
 const transporter = require("./helpers/mailer")
 const Mail = require("nodemailer/lib/mailer")
 
+// Conexion
 mongoose.connect(process.env.MONGODB_URL)
 .then(()=>{
   console.log("Conexion exitosa con la BBDD!!!!!! - Bien Pipe")
@@ -15,39 +16,47 @@ mongoose.connect(process.env.MONGODB_URL)
   console.log("hubo un error al conectarnos con la BBDD")
 )
 
+// Esquemas
 const taskSchema = new Schema({
   name: String,
   done: Boolean
 })
 
+const userSchema = new Schema({
+  firstname: String,
+  lastname: String,
+  email: String,
+  login_code: String
+})
+
+// Modelos
 const Task = mongoose.model("Task", taskSchema, "Tasks" )
+const User = mongoose.model("User", userSchema, "Users" )
 
-// Servir archivos estaticos
-app.use(express.static('public'))
-
-// Middlewares para parsear el BODY de las requests
+// Servir archivos estaticos / Middleweres / app.use(express.json()) Middlewares para parsear el BODY de las requests
+app.use(express.static('public', { extensions: ["html", "css", "js"] }))
 app.use(express.json())
 
 // Middlewares (preprocesamento de requests)
 // Son SIEMPRE => FUNCIONES
 
 // A) Pasamos una funicon anonima.
-app.use((req,res,next)=>{
-  console.log("No especificamos como debe ser el inicio de la ruta")
-  console.log("Middlewares 1")
-  next()
-})
+//app.use((req,res,next)=>{
+//  console.log("No especificamos como debe ser el inicio de la ruta")
+//  console.log("Middlewares 1")
+//  next()
+//})
 
 // B) Pasamos una funcion RETORNADA por OTRA FUNCION/METODO
-const logger = {
-  logThis: (whatToLog) => {
-    return (req, res, next) => {
-    console.log("Middleware 2: ", whatToLog)
-    next()
-  }
-},
-}
-app.use("/martin", logger.logThis("logueame estooo"))
+//const logger = {
+//  logThis: (whatToLog) => {
+//    return (req, res, next) => {
+//    console.log("Middleware 2: ", whatToLog)
+//    next()
+//  }
+//},
+//}
+//app.use("/martin", logger.logThis("logueame estooo"))
 // hasta aca ej. B
 
 // Configuar rutas
@@ -104,23 +113,61 @@ app.delete('/api/tasks/:id', (req, res) => {
   })
 })
 
-// Mail
+// Mail y Codigos
 app.post('/api/auth/login/:email/code', async function (req, res) {
   const { email } = req.params
+
+  const user = await User.findOne({ email })
+
+  if (!user) {
+    //await User.create({ email, firstname: "Jose", lastname: "jdb"})
+    return res
+    .status(400)
+    .json({ok: false, message: "No existe un usuario con ese correo"})
+  }
+  
+  let code = ""
+
+  for (let index = 0; index <=5; index++){
+    let character = Math.floor( Math.random() * 9)
+    code += character
+  }
+  console.log({ code })
+
+  user.login_code = code
+  await user.save()
+
   const result = await transporter.sendMail({
   from: `JDB Sistemas ${process.env.EMAIL}`,
   to: email,
-  subject:"Codigo de inicio de sesion: ",
+  subject:"Codigo de inicio de sesion: " + code,
   body:"Este es tu codigo para iniciar sesion: ",
 })
 console.log({ result })
 res.status(200).json({ok: true, message: "Codigo enviado con exito!"})
 })
 
-// otras pruebas vs.
-app.get('/api/users', (req, res) => {
-  res.send([{name:"Martin"},{name:"Sam"},{name:"Felipe"}])
+// Iniciar sesion
+app.post('/api/auth/login/:email', async function (req, res) {
+  const { email } = req.params
+  const { code } = req.body
+
+  const user = await User.findOne({ email, login_code: code })
+
+  if (!user) {
+    //await User.create({ email, firstname: "Jose", lastname: "jdb"})
+    return res
+    .status(400)
+    .json({ok: false, message: "Credenciales invalidas"})
+  }
+    
+res.status(200).json({ok: true, message: "Inicio de sesion exitoso!!!"})
 })
+
+// otras pruebas vs.
+//app.get('/api/users', (req, res) => {
+//  res.send([{name:"Martin"},{name:"Sam"},{name:"Felipe"}])
+//})
 
 //Poner a escuchar la APP en un puerto
 app.listen(port, () => {
