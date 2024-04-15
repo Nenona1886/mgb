@@ -29,5 +29,6 @@ form.addEventListener("submit", async function (e) {
         body: JSON.stringify({ code: inputCode.value }),
     })
     const resJSON = await res.json()
+    window.location.href = "/"
     console.log({ resJSON })
 })

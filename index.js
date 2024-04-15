@@ -1,44 +1,37 @@
 require("dotenv").config()
 const express = require('express')
 const app = express()
+const dbConnect = require("./db/connect")
+const cookieParser = require("cookie-parser")
+const tasksRoutes = require("./routes/task")
+const authRoutes = require("./routes/auth")
+const { jwtValidation } = require("./middlewares/jwtValidation")
+
+//Ejecuto la conexion
+dbConnect()
+
+// Middlewares (preprocesamento de requests) // Son SIEMPRE => FUNCIONES
+app.use(express.static('public', { extensions: ["html", "css", "js"] })) // Servir archivos estaticos
+app.use(express.json()) // Middlewares para parsear el BODY de las requests
+app.use(cookieParser())
+
+// Configuar nuestros ROUTERS
+app.use("/api/auth", authRoutes ) // Ruta de autenticacion
+
+app.use(jwtValidation) // este Middlewares NO USAR en ruta de autenticacion
+
+app.use("/api/tasks", tasksRoutes)
+
 const port = process.env.PORT
-const mongoose = require('mongoose')
-const Schema =mongoose.Schema
-const transporter = require("./helpers/mailer")
-const Mail = require("nodemailer/lib/mailer")
-
-// Conexion
-mongoose.connect(process.env.MONGODB_URL)
-.then(()=>{
-  console.log("Conexion exitosa con la BBDD!!!!!! - Bien Pipe")
-})
-.catch((err) =>
-  console.log("hubo un error al conectarnos con la BBDD")
-)
-
-// Esquemas
-const taskSchema = new Schema({
-  name: String,
-  done: Boolean
+//Poner a escuchar la APP en un puerto
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
 })
 
-const userSchema = new Schema({
-  firstname: String,
-  lastname: String,
-  email: String,
-  login_code: String
-})
-
-// Modelos
-const Task = mongoose.model("Task", taskSchema, "Tasks" )
-const User = mongoose.model("User", userSchema, "Users" )
-
-// Servir archivos estaticos / Middleweres / app.use(express.json()) Middlewares para parsear el BODY de las requests
-app.use(express.static('public', { extensions: ["html", "css", "js"] }))
-app.use(express.json())
-
-// Middlewares (preprocesamento de requests)
-// Son SIEMPRE => FUNCIONES
+// otras pruebas vs.
+//app.get('/api/users', (req, res) => {
+//  res.send([{name:"Martin"},{name:"Sam"},{name:"Felipe"}])
+//})
 
 // A) Pasamos una funicon anonima.
 //app.use((req,res,next)=>{
@@ -60,116 +53,7 @@ app.use(express.json())
 // hasta aca ej. B
 
 // Configuar rutas
-app.get('/', (req, res) => {  res.send('Hello World! - Sam Sam - Presta atencion - Jamas lo Dudes')})
+//app.get('/', (req, res) => {  res.send('Hello World! - Sam Sam - Presta atencion - Jamas lo Dudes')})
 
 // Buscar todas las tareas (ya creadas)- usando el modelo de mongoose 
 // const Task = mongoose.model("Task", taskSchema, "Tasks" )
-app.get('/api/tasks', (req, res) => {
-  Task.find().then((tasks)=>{
-    res.status(200).json({ ok: true, message: "Tareas existentes", data: tasks })
-  }).catch((err) => {
-    res.status(400).json({ok: false, message: "Error al obtener tareas"})
-  })
-})
-
-// Crear
-app.post('/api/tasks', (req, res) => {
-  const body = req.body
-  console.log({ body })
-  Task.create({
-    name: body.text,
-    done: false
-  }).then((createdTask)=>{
-    res.status(201).json({ ok: true, message: "Tarea creada con exito", data: createdTask })
-  }).catch((err) => {
-    res.status(400).json({ok: false, message: "Error al crear la tarea"})
-  })
-})
-
-// Actualiar
-app.put('/api/tasks/:id', (req, res) => {
-  const body = req.body
-  const id = req.params.id
-  //console.log({ body })
-  Task.findByIdAndUpdate(id, {
-    name: body.text,
-  }).then((updatedTask)=>{
-    res.status(200).json({ ok: true, message: "Tarea actualizada / editada con exito", data: updatedTask })
-  }).catch((err) => {
-    res.status(400).json({ok: false, message: "Error al actualizar / editar la tarea"})
-  })
-})
-
-// Eliminar
-//con las teclas Shift + Alt + Flecha Abajo (duplica el codigo).
-app.delete('/api/tasks/:id', (req, res) => {
-  const id = req.params.id
-  //console.log({ params: req.params })
-  //Task.deleteOne({_id: id}) // un metodo
-  Task.findByIdAndDelete(id).then((deletedTask) => {
-    res.status(200).json({ ok: true, message: "Tarea Eliminada", data: deletedTask })
-  }).catch((err) => {
-    res.status(400).json({ok: false, message: "Error al eliminar tarea"})
-  })
-})
-
-// Mail y Codigos
-app.post('/api/auth/login/:email/code', async function (req, res) {
-  const { email } = req.params
-
-  const user = await User.findOne({ email })
-
-  if (!user) {
-    //await User.create({ email, firstname: "Jose", lastname: "jdb"})
-    return res
-    .status(400)
-    .json({ok: false, message: "No existe un usuario con ese correo"})
-  }
-  
-  let code = ""
-
-  for (let index = 0; index <=5; index++){
-    let character = Math.floor( Math.random() * 9)
-    code += character
-  }
-  console.log({ code })
-
-  user.login_code = code
-  await user.save()
-
-  const result = await transporter.sendMail({
-  from: `JDB Sistemas ${process.env.EMAIL}`,
-  to: email,
-  subject:"Codigo de inicio de sesion: " + code,
-  body:"Este es tu codigo para iniciar sesion: ",
-})
-console.log({ result })
-res.status(200).json({ok: true, message: "Codigo enviado con exito!"})
-})
-
-// Iniciar sesion
-app.post('/api/auth/login/:email', async function (req, res) {
-  const { email } = req.params
-  const { code } = req.body
-
-  const user = await User.findOne({ email, login_code: code })
-
-  if (!user) {
-    //await User.create({ email, firstname: "Jose", lastname: "jdb"})
-    return res
-    .status(400)
-    .json({ok: false, message: "Credenciales invalidas"})
-  }
-    
-res.status(200).json({ok: true, message: "Inicio de sesion exitoso!!!"})
-})
-
-// otras pruebas vs.
-//app.get('/api/users', (req, res) => {
-//  res.send([{name:"Martin"},{name:"Sam"},{name:"Felipe"}])
-//})
-
-//Poner a escuchar la APP en un puerto
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})

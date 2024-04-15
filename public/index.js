@@ -20,15 +20,15 @@ createEditBtn.addEventListener("click", async function () {
     const path = creating ? "tasks" : `tasks/${TASK_TO_EDIT._id}`
     const method = creating ? "POST" : "PUT"
     const res = await fetch(`${baseBackendUrl}/${path}`, {
-        method,
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: input.value }),
     })
         getTasks()
         input.value = ""
         createEditBtn.innerText = "Crear tarea"   
-    const resJSON = await res.json()
-    console.log({resJSON})
+    //const resJSON = await res.json()
+    //console.log({resJSON})
 })
 
 //Definicion de funciones
@@ -70,7 +70,6 @@ async function getTasks() {
             tasksDIV.appendChild(taskContainDIV)
         }
 }
-
 
 //LLamamos a la funcion definida
 getTasks()
