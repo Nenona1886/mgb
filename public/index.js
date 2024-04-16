@@ -20,7 +20,7 @@ createEditBtn.addEventListener("click", async function () {
     const path = creating ? "tasks" : `tasks/${TASK_TO_EDIT._id}`
     const method = creating ? "POST" : "PUT"
     const res = await fetch(`${baseBackendUrl}/${path}`, {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: input.value }),
     })
@@ -43,19 +43,20 @@ async function getTasks() {
             const taskParagraph = document.createElement('p') //creo un elemento HTML
             const deleteTaskBtn = document.createElement('button') //creo un elemento HTML
             const taskContainDIV = document.createElement('div')
-            deleteTaskBtn.innerText = "Borrar" //
+            deleteTaskBtn.innerText = "Borrar"
             taskParagraph.innerText = task.name //le ponemos el texto de cada tarea
             deleteTaskBtn.setAttribute('id', task._id)
-            deleteTaskBtn.addEventListener('click',(e)=>{
+            deleteTaskBtn.addEventListener('click', (e) => {
                 //console.log({e}) ver explicacion m bueno
                 const taskId = e.target.id
                 deleteTaskBtn.innerText = "..."
                 fetch(`${baseBackendUrl}/tasks/${taskId}`, {
                     method: "DELETE",
-                }).then(() => {
+                }).then (() => {
+                    getTasks()
                     const taskDiv = deleteTaskBtn.parentElement
                     taskDiv.remove()
-                    //getTasks()
+                    //console.log( {taskDiv} )
                 })
             })
             taskParagraph.addEventListener("click",(e)=>{
