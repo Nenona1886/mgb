@@ -3,9 +3,14 @@
     <head>
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script
+         src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.all.min.js"
+         integrity="sha256-O11zcGEd6w4SQFlm8i/Uk5VAB+EhNNmynVLznwS6TJ4=" 
+         crossorigin="anonymous">
+        </script>
         <link rel="stylesheet" href="./styles.css" />
-        <script src="./login.js" defer></script>
+        <script type="module" src="./login.js" defer></script>
         <title>App de tareas / sam</title>
     </head>
     <body>
@@ -15,7 +20,7 @@
             <input id="code" type="text" placeholder="Ingresar codigo" />
             <div class="df aic">
              <button type="submit" class="mr5">Iniciar sesion</button>
-             <button id="codeBtn">Quiero un codigo</button>
+             <button type="button" id="codeBtn">Quiero un codigo</button>
             </div>
         </form>
     </body>
